@@ -1,0 +1,14 @@
+{
+  "name": "sacole-bot",
+  "version": "1.0.0",
+  "description": "Agente de atendimento IA para empresa de sacole",
+  "main": "servidor.js",
+  "scripts": {
+    "start": "node servidor.js",
+    "estoque": "node atualizar-estoque.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "express": "^4.18.2"
+  }
+}
