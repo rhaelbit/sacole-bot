@@ -1,0 +1,13 @@
+{
+  "preco_unidade": 6.00,
+  "sabores": {
+    "morango": 20,
+    "manga": 15,
+    "uva": 18,
+    "coco": 12,
+    "limao": 10,
+    "maracuja": 14,
+    "acai": 8,
+    "goiaba": 16
+  }
+}
