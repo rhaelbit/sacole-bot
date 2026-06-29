@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sacole Bot</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);height:100vh;display:flex;align-items:center;justify-content:center}
+.chat{width:100%;max-width:450px;height:90vh;max-height:700px;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden}
+.header{background:linear-gradient(135deg,#ff6b9d,#c44569);color:#fff;padding:20px;text-align:center}
+.header h1{font-size:1.3em;margin-bottom:4px}
+.header p{font-size:.85em;opacity:.9}
+.msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:80%;padding:12px 16px;border-radius:18px;font-size:.95em;line-height:1.4}
+.msg.bot{background:#f0f0f0;align-self:flex-start;border-bottom-left-radius:4px}
+.msg.user{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.dots{display:flex;gap:4px;padding:4px 0}
+.dots span{width:8px;height:8px;background:#999;border-radius:50%;animation:b 1.4s infinite both}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes b{0%,80%,100%{transform:scale(.6)}40%{transform:scale(1)}}
+.input-area{display:flex;padding:16px;border-top:1px solid #eee;background:#fafafa}
+.input-area input{flex:1;padding:12px 18px;border:2px solid #e0e0e0;border-radius:25px;font-size:.95em;outline:none}
+.input-area input:focus{border-color:#667eea}
+.input-area button{margin-left:10px;padding:12px 20px;background:linear-gradient(135deg,#ff6b9d,#c44569);color:#fff;border:none;border-radius:25px;font-size:.95em;cursor:pointer}
+.input-area button:disabled{opacity:.6;cursor:not-allowed}
+.est-btn{position:fixed;bottom:20px;right:20px;background:#28a745;color:#fff;border:none;padding:12px 18px;border-radius:30px;cursor:pointer;font-size:.85em;box-shadow:0 4px 15px rgba(40,167,69,.4)}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:999}
+.overlay.on{display:block}
+.panel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:30px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.4);z-index:1000;max-width:400px;width:90%;max-height:80vh;overflow-y:auto}
+.panel.on{display:block}
+.panel h2{margin-bottom:16px;color:#333}
+.item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
+.item label{font-weight:500;text-transform:capitalize}
+.item input{width:60px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;text-align:center}
+.panel .btns{margin-top:16px}
+.panel .btns button{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:.9em;margin-right:10px}
+.btn-save{background:#28a745;color:#fff}
+.btn-close{background:#dc3545;color:#fff}
+@media(max-width:500px){.chat{height:100vh;max-height:100vh;border-radius:0}body{padding:0}}
+</style>
+</head>
+<body>
+<div class="chat">
+<div class="header"><h1>Sacole Bot</h1><p>Pergunte sobre sabores e precos!</p></div>
+<div class="msgs" id="msgs"><div class="msg bot">Oi! Eu sou a Gelinha, sua atendente virtual de sacoles! Como posso te ajudar?</div></div>
+<div class="input-area">
+<input type="text" id="inp" placeholder="Digite sua mensagem..." autocomplete="off">
+<button id="btn" onclick="enviar()">Enviar</button>
+</div>
+</div>
+<button class="est-btn" onclick="abrirEst()">Estoque</button>
+<div class="overlay" id="ov" onclick="fecharEst()"></div>
+<div class="panel" id="pn"><h2>Gerenciar Estoque</h2><div id="lst"></div><div class="btns"><button class="btn-save" onclick="salvarEst()">Salvar</button><button class="btn-close" onclick="fecharEst()">Fechar</button></div></div>
+<script>
+const inp=document.getElementById('inp'),btn=document.getElementById('btn'),msgs=document.getElementById('msgs');
+inp.addEventListener('keypress',e=>{if(e.key==='Enter')enviar()});
+async function enviar(){
+const t=inp.value.trim();if(!t)return;
+addMsg(t,'user');inp.value='';btn.disabled=true;
+const typ=document.createElement('div');typ.className='msg bot';typ.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';msgs.appendChild(typ);msgs.scrollTop=msgs.scrollHeight;
+try{const r=await fetch('/api/mensagem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mensagem:t})});const d=await r.json();typ.remove();addMsg(d.resposta,'bot')}catch(e){typ.remove();addMsg('Ops, algo deu errado. Tente novamente!','bot')}
+btn.disabled=false;inp.focus();
+}
+function addMsg(t,tipo){const d=document.createElement('div');d.className='msg '+tipo;d.textContent=t;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight}
+async function abrirEst(){
+document.getElementById('ov').classList.add('on');document.getElementById('pn').classList.add('on');
+try{const r=await fetch('/api/estoque');const d=await r.json();let h='';for(const[s,q]of Object.entries(d.sabores)){h+='<div class="item"><label>'+s+'</label><input type="number" min="0" value="'+q+'" data-sabor="'+s+'"></div>'}document.getElementById('lst').innerHTML=h}catch(e){document.getElementById('lst').innerHTML='<p>Erro ao carregar</p>'}
+}
+function fecharEst(){document.getElementById('ov').classList.remove('on');document.getElementById('pn').classList.remove('on')}
+async function salvarEst(){
+const inputs=document.querySelectorAll('#lst input');
+for(const i of inputs){await fetch('/api/estoque',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sabor:i.dataset.sabor,quantidade:parseInt(i.value)})})}
+alert('Estoque atualizado!');fecharEst();
+}
+</script>
+</body>
+</html>
